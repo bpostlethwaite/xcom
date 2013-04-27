@@ -4,21 +4,23 @@
  * is the key. Eventually make this configurable.
  */
 var Transform = require('stream').Transform
+var fuzzy = require('fuzzy')
 
 var _transform = function(chunk, encoding, callback) {
   var self = this
-  var matches = this.match.map(function (str) {return str.toLowerCase()})
+  var keys = this.keys
   var string = chunk.toString('utf8')
   // console.log(string)
   // console.log('------')
-  if (matches) {
+  if (keys) {
     var fields = string.split(' ')
-      , rstring = fields.slice(1,3).join(' ')
-      , key = fields[0].toLowerCase()
+    //  , rstring = fields.slice(1,3).join(' ')
 
-    matches.forEach( function (matchstr) {
-      if (key === matchstr) {
-        var out = new Buffer(rstring, 'utf8')
+    keys.forEach( function (key) {
+      var results = fuzzy.filter(key, fields)
+      if (results.length > 0) {
+        console.log("RESULTS:", results)
+        var out = new Buffer(string, 'utf8')
         self.push(out)
       }
     })
@@ -26,9 +28,9 @@ var _transform = function(chunk, encoding, callback) {
   callback()
 }
 
-module.exports = function (match) {
+module.exports = function (keys) {
   var s = new Transform()
-  s.match = match
+  s.keys = keys
   s._transform = _transform
   return s
 }

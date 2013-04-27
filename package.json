@@ -1,0 +1,22 @@
+{
+  "name": "xcom",
+  "version": "0.0.0",
+  "description": "Does things.",
+  "main": "index.js",
+  "dependencies": {
+    "split": "~0.2.5",
+    "optimist": "~0.4.0",
+    "fuzzy": "~0.1.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bpostlethwaite/xcom.git"
+  },
+  "author": "Ben Postlethwaite",
+  "license": "MIT",
+  "readmeFilename": "README.MD",
+  "gitHead": "3c77ddff7875bbebc6951becc0d81551369998bf"
+}
