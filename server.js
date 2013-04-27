@@ -4,6 +4,8 @@ var https = require('https')
   , url = require('url')
   , st = require('st')
   , router = new require('routes').Router()
+  , auth = require('./levelauth.js')
+  , genKey = require('uid')
 
 var SECURE = false
 
@@ -16,7 +18,11 @@ var staticOptions = {
 }
 
 var mount = st(staticOptions)
-
+var keyring = [] // Keyring for monitoring allowed requests
+/*
+ * CREATE SERVERS
+ *
+ */
 if (SECURE) {
   var Authoptions = {
     key:    fs.readFileSync('auth/ssl.key'),
@@ -31,7 +37,10 @@ if (SECURE) {
   http.createServer(handler).listen(8082)
   console.log("http server listening on port 8082")
 }
-
+/*
+ * RESPONSE HANDLER
+ *
+ */
 function handler (req, res) {
   if (mount(req, res)) return //serve index.html
   else if (route(req, res)) return //route other requests
@@ -41,7 +50,10 @@ function handler (req, res) {
     res.end('bad')
   }
 }
-
+/*
+ * ROUTER
+ *
+ */
 function route(req, res) {
   var urlp = url.parse(req.url, true)
   var go = router.match(urlp.path)
@@ -49,9 +61,16 @@ function route(req, res) {
   else return false
 }
 
-router.addRoute("/authenticate", noop);
+router.addRoute("/authenticate", login);
 
-function noop() {
+/*
+ * Router Logic
+ * Test API with
+ * curl -X POST -d "username=Ben&password=secret" localhost:8082/authenticate()
+ * etc
+ */
+
+function login() {
   var req = arguments[0]
     , res = arguments[1]
     , urlp = arguments[2]
@@ -59,7 +78,6 @@ function noop() {
   var data = ''
 
   if (req.method==="POST") {
-    console.log("NOOP POST")
     req.on('data', function (chunk) {
       data += chunk
     })
@@ -67,13 +85,37 @@ function noop() {
     req.on("end", function() {
       var re =/^username=(.*)&password=(.*)$/;
       var match = data.match(re)
-      console.log("username:", match[1])
-      console.log("password:", match[2])
+      auth(match[1], match[2], handlelogin(res))
+
     })
+
 
     return true
   }
 
   return false
     //var json = qs.parse(data);
+}
+
+function handlelogin(res) {
+  var minutes = 1000*60
+  return function (loginStatus) {
+    var passKey = null
+    if (loginStatus) {
+      passKey = genKey()
+      keyring.push(passKey)
+      setTimeout( invalidate(passKey), 2*minutes )
+    }
+    res.writeHead(200, {"Content-Type": "application/json"})
+    var responseObject = {
+      authenticated: loginStatus
+    , passKey: passKey
+    }
+    res.write(JSON.stringify(responseObject))
+    res.end()
+  }
+}
+
+function invalidate(key) {
+  keyring.filter( function(k) {return k !== key})
 }
