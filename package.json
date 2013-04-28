@@ -22,5 +22,9 @@
   "author": "Ben Postlethwaite",
   "license": "MIT",
   "readmeFilename": "README.MD",
-  "gitHead": "3c77ddff7875bbebc6951becc0d81551369998bf"
+  "gitHead": "3c77ddff7875bbebc6951becc0d81551369998bf",
+  "devDependencies": {
+    "tap": "~0.4.1",
+    "request": "~2.20.0"
+  }
 }

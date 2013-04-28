@@ -17,6 +17,6 @@ module.exports = function(user, pass, cb) {
 }
 
 // db.createReadStream()
-//   .on('data', function (data) {
+//   ('data', function (data) {
 //     console.log(data.key, '=', data.value)
 //   })

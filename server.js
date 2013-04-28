@@ -62,18 +62,17 @@ function route(req, res) {
 }
 
 router.addRoute("/authenticate", login);
-
+router.addRoute("/app", command);
 /*
  * Router Logic
  * Test API with
- * curl -X POST -d "username=Ben&password=secret" localhost:8082/authenticate()
+ * curl -X POST -d "username=ben&password=secret" localhost:8082/authenticate
  * etc
  */
 
 function login() {
   var req = arguments[0]
     , res = arguments[1]
-    , urlp = arguments[2]
 
   var data = ''
 
@@ -85,37 +84,56 @@ function login() {
     req.on("end", function() {
       var re =/^username=(.*)&password=(.*)$/;
       var match = data.match(re)
-      auth(match[1], match[2], handlelogin(res))
 
+      if (match && match[1] && match[2])
+        return auth(match[1], match[2], handlelogin(res))
+
+      else return handleResponse(res, {
+        authenticated: false
+      , passkey: null
+      , error : "mangled keynames: keys = username=<user>&password=<pass>"
+      })
     })
-
-
-    return true
   }
-
-  return false
-    //var json = qs.parse(data);
+  return true
 }
 
 function handlelogin(res) {
   var minutes = 1000*60
   return function (loginStatus) {
-    var passKey = null
+    var token = null
     if (loginStatus) {
-      passKey = genKey()
-      keyring.push(passKey)
-      setTimeout( invalidate(passKey), 2*minutes )
+      token = genKey()
+      keyring.push(token)
+      setTimeout( invalidate(token), 0.1*minutes )
+      handleResponse(res, {
+        authenticated: loginStatus
+      , token: token
+      , error: null
+      })
     }
-    res.writeHead(200, {"Content-Type": "application/json"})
-    var responseObject = {
+    else handleResponse(res, {
       authenticated: loginStatus
-    , passKey: passKey
-    }
-    res.write(JSON.stringify(responseObject))
-    res.end()
+    , passkey: null
+    , error: "username or password not recognized"
+    })
   }
 }
 
 function invalidate(key) {
-  keyring.filter( function(k) {return k !== key})
+  return function () {
+    keyring = keyring.filter( function(k) {return k !== key})
+  }
 }
+
+
+function handleResponse (res, resobj) {
+  res.writeHead(200, {"Content-Type": "application/json"})
+  res.write(JSON.stringify(resobj))
+  res.end()
+}
+
+
+function command() {
+  var req = arguments[0]
+    , res = arguments[1]
