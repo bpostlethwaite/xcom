@@ -4,33 +4,31 @@
  * is the key. Eventually make this configurable.
  */
 var Transform = require('stream').Transform
-var fuzzy = require('fuzzy')
+var Fuse = require('./fuse')
+var options = {
+  keys: ['key']
+, threshold: 0.3
+}
 
-var _transform = function(chunk, encoding, callback) {
+
+var _transform = function(dbobj, encoding, callback) {
+
   var self = this
-  var keys = this.keys
-  var string = chunk.toString('utf8')
-  // console.log(string)
-  // console.log('------')
-  if (keys) {
-    var fields = string.split(' ')
-    //  , rstring = fields.slice(1,3).join(' ')
-
-    keys.forEach( function (key) {
-      var results = fuzzy.filter(key, fields)
-      if (results.length > 0) {
-        console.log("RESULTS:", results)
-        var out = new Buffer(string, 'utf8')
-        self.push(out)
-      }
+  var f = new Fuse([dbobj], options)
+  var result = f.search(this.matcher)
+  if (result.length > 0) {
+    result.forEach( function (k) {
+      self.push(dbobj)
     })
   }
   callback()
 }
 
-module.exports = function (keys) {
-  var s = new Transform()
-  s.keys = keys
+
+
+module.exports = function (matcher) {
+  var s = new Transform({objectMode:true})
+  s.matcher = matcher
   s._transform = _transform
   return s
 }
