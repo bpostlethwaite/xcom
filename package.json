@@ -8,7 +8,9 @@
     "optimist": "~0.4.0",
     "fuzzy": "~0.1.0",
     "st": "~0.1.3",
-    "routes": "~0.1.1"
+    "routes": "~0.1.1",
+    "levelup": "~0.8.0",
+    "uid": "0.0.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -20,5 +22,9 @@
   "author": "Ben Postlethwaite",
   "license": "MIT",
   "readmeFilename": "README.MD",
-  "gitHead": "3c77ddff7875bbebc6951becc0d81551369998bf"
+  "gitHead": "3c77ddff7875bbebc6951becc0d81551369998bf",
+  "devDependencies": {
+    "tap": "~0.4.1",
+    "request": "~2.20.0"
+  }
 }

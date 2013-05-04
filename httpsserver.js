@@ -4,6 +4,8 @@ var https = require('https')
   , url = require('url')
   , st = require('st')
   , router = new require('routes').Router()
+  , auth = require('./levelauth.js')
+  , genKey = require('uid')
 
 var SECURE = false
 
@@ -16,7 +18,11 @@ var staticOptions = {
 }
 
 var mount = st(staticOptions)
-
+var keyring = [] // Keyring for monitoring allowed requests
+/*
+ * CREATE SERVERS
+ *
+ */
 if (SECURE) {
   var Authoptions = {
     key:    fs.readFileSync('auth/ssl.key'),
@@ -31,7 +37,10 @@ if (SECURE) {
   http.createServer(handler).listen(8082)
   console.log("http server listening on port 8082")
 }
-
+/*
+ * RESPONSE HANDLER
+ *
+ */
 function handler (req, res) {
   if (mount(req, res)) return //serve index.html
   else if (route(req, res)) return //route other requests
@@ -41,7 +50,10 @@ function handler (req, res) {
     res.end('bad')
   }
 }
-
+/*
+ * ROUTER
+ *
+ */
 function route(req, res) {
   var urlp = url.parse(req.url, true)
   var go = router.match(urlp.path)
@@ -49,17 +61,22 @@ function route(req, res) {
   else return false
 }
 
-router.addRoute("/authenticate", noop);
+router.addRoute("/authenticate", login);
+router.addRoute("/app", command);
+/*
+ * Router Logic
+ * Test API with
+ * curl -X POST -d "username=ben&password=secret" localhost:8082/authenticate
+ * etc
+ */
 
-function noop() {
+function login() {
   var req = arguments[0]
     , res = arguments[1]
-    , urlp = arguments[2]
 
   var data = ''
 
   if (req.method==="POST") {
-    console.log("NOOP POST")
     req.on('data', function (chunk) {
       data += chunk
     })
@@ -67,13 +84,56 @@ function noop() {
     req.on("end", function() {
       var re =/^username=(.*)&password=(.*)$/;
       var match = data.match(re)
-      console.log("username:", match[1])
-      console.log("password:", match[2])
+
+      if (match && match[1] && match[2])
+        return auth(match[1], match[2], handlelogin(res))
+
+      else return handleResponse(res, {
+        authenticated: false
+      , passkey: null
+      , error : "mangled keynames: keys = username=<user>&password=<pass>"
+      })
     })
-
-    return true
   }
-
-  return false
-    //var json = qs.parse(data);
+  return true
 }
+
+function handlelogin(res) {
+  var minutes = 1000*60
+  return function (loginStatus) {
+    var token = null
+    if (loginStatus) {
+      token = genKey()
+      keyring.push(token)
+      setTimeout( invalidate(token), 0.1*minutes )
+      handleResponse(res, {
+        authenticated: loginStatus
+      , token: token
+      , error: null
+      })
+    }
+    else handleResponse(res, {
+      authenticated: loginStatus
+    , passkey: null
+    , error: "username or password not recognized"
+    })
+  }
+}
+
+function invalidate(key) {
+  return function () {
+    keyring = keyring.filter( function(k) {return k !== key})
+  }
+}
+
+
+function handleResponse (res, resobj) {
+  res.writeHead(200, {"Content-Type": "application/json"})
+  res.write(JSON.stringify(resobj))
+  res.end()
+}
+
+
+function command() {
+  var req = arguments[0]
+    , res = arguments[1]
