@@ -4,37 +4,56 @@ var levnet = require('levelnet')
   , PORT = 9988
   , stream = net.connect(PORT)
   , lev = levnet.client()
+  , gitarg = require('./gitarg')()
 
-if (process.argv.length !== 3) {
-  console.log("usage: gp KEY")
-  process.exit()
-}
 
-var KEY = process.argv[2]
 
 prompt.message = "Enter you password: "
 prompt.start()
 
-prompt.get({
+var passScheme = {
   properties: {
     password: {
       description: 'Enter your password',
       type: 'string',
-      message: 'Password must be letters spaces or dashes',
       hidden: true,
       required: true
     }
   }
-}, onPrompt)
+}
 
+if (gitarg.cmd === "put")
+  doublePrompt(passScheme, onPrompt)
+else prompt.get(passScheme, onPrompt)
 
-function onPrompt (err, result) {
+function onPrompt(err, result) {
+  if (err) throw new Error ("password error")
+  gitarg.addcmd("get", get, 1, [result.password])
+  gitarg.addcmd("put", put, 3, [result.password])
+  gitarg.run()
+}
 
-  var fuzzStream = require('./fuzzyStream')(KEY)
-    , decryptStream = require('./decryptValueStream')('aes192', result.password)
+function doublePrompt(passScheme, onPrompt) {
+  var pass1
+  prompt.get(passScheme, function (err, result) {
+    if (err) throw new Error ("password error")
+    pass1 = result.password
+    prompt.message = "Enter you password again: "
+    prompt.get(passScheme, function (err, result2) {
+      if (err) throw new Error ("password error")
+      if (pass1 !== result2.password)
+        throw new Error ("passwords do not match")
+      onPrompt(null, result)
+    })
+  })
+}
 
+function get (key, password) {
+  var fuzzStream = require('./fuzzyStream')(key)
+    , decryptStream = require('./decryptValueStream')('aes192', password)
   stream.pipe(lev).pipe(stream)
   lev.on('levelup', function () {
+    console.log(key, password)
 
     var dataStream = lev.createReadStream()
     dataStream.pipe(fuzzStream).pipe(decryptStream)
@@ -46,7 +65,19 @@ function onPrompt (err, result) {
     dataStream.on('end', function () {
       lev.end()
     })
-
   })
 }
 
+function put (key, user, pxx, password) {
+  var fuzzStream = require('./fuzzyStream')(key)
+    , encryptStream = require('./encryptValueStream')('aes192', password)
+
+  stream.pipe(lev).pipe(stream)
+  lev.on('levelup', function () {
+    lev.end()
+    // lev.put(key, {user: user, pxx: pxx}, function (err) {
+    //   if (err) throw err
+    //   lev.end()
+    // })
+  })
+}

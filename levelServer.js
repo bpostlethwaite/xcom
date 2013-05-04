@@ -6,6 +6,8 @@ var levelup = require('levelup')
 var PORT = 9988
   , server = net.createServer(handler).listen(PORT)
 
+console.log("levelUP server listening on port", PORT)
+
 function handler(stream) {
 
   var lev = levnet.server(db)
@@ -19,5 +21,3 @@ function handler(stream) {
     lev.destroy()
   })
 }
-
-
