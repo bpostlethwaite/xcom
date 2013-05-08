@@ -7,7 +7,7 @@ var Transform = require('stream').Transform
 var Fuse = require('./fuse')
 var options = {
   keys: ['key']
-, threshold: 0.3
+, threshold: 0.334
 }
 
 

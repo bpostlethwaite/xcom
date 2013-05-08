@@ -50,11 +50,12 @@ function doublePrompt(passScheme, onPrompt) {
 
 function get (key, password) {
   var fuzzStream = require('./fuzzyStream')(key)
-    , decryptStream = require('./decryptValueStream')('aes192', password)
+    , decryptStream = require('./jcrypt').createDecipher({
+      alg: 'aes192'
+    , pwd: password
+    })
   stream.pipe(lev).pipe(stream)
   lev.on('levelup', function () {
-    console.log(key, password)
-
     var dataStream = lev.createReadStream()
     dataStream.pipe(fuzzStream).pipe(decryptStream)
 
@@ -70,14 +71,24 @@ function get (key, password) {
 
 function put (key, user, pxx, password) {
   var fuzzStream = require('./fuzzyStream')(key)
-    , encryptStream = require('./encryptValueStream')('aes192', password)
+    , encryptStream = require('./jcrypt').createCipher({
+      alg: 'aes192'
+    , pwd: password
+    , inEnc: 'utf8'
+    , outEnc: 'hex'
+    })
 
   stream.pipe(lev).pipe(stream)
+
   lev.on('levelup', function () {
-    lev.end()
-    // lev.put(key, {user: user, pxx: pxx}, function (err) {
-    //   if (err) throw err
-    //   lev.end()
-    // })
+
+    encryptStream.on('data', function (data) {
+      lev.put(data.key, data.value, function (err) {
+        if (err) throw err
+        lev.end()
+      })
+    })
+
+    encryptStream.write({key:key, value: {user: user, pxx: pxx}})
   })
 }
