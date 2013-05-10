@@ -22,7 +22,7 @@ var passScheme = {
   }
 }
 
-if (gitarg.cmd === "put")
+if (gitarg.cmd.toLowerCase() === "put")
   doublePrompt(passScheme, onPrompt)
 else prompt.get(passScheme, onPrompt)
 
