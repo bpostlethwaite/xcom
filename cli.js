@@ -1,8 +1,8 @@
 var levnet = require('levelnet')
   , net = require('net')
   , prompt = require('prompt')
-  , PORT = 9988
-  , stream = net.connect(PORT)
+  , URL = "sparse.io"
+  , stream = net.connect(5555, URL)
   , lev = levnet.client()
   , gitarg = require('./gitarg')()
 
