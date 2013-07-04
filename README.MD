@@ -1,3 +1,0 @@
-# XCOM
-
-Does things.
