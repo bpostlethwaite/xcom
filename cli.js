@@ -1,3 +1,4 @@
+#! /usr/bin/nodejs
 var levnet = require('levelnet')
   , net = require('net')
   , prompt = require('prompt')
@@ -70,13 +71,12 @@ function get (key, password) {
 }
 
 function put (key, user, pxx, password) {
-  var fuzzStream = require('./fuzzyStream')(key)
-    , encryptStream = require('./jcrypt').createCipher({
-      alg: 'aes192'
-    , pwd: password
-    , inEnc: 'utf8'
-    , outEnc: 'hex'
-    })
+  var encryptStream = require('./jcrypt').createCipher({
+    alg: 'aes192'
+  , pwd: password
+  , inEnc: 'utf8'
+  , outEnc: 'hex'
+  })
 
   stream.pipe(lev).pipe(stream)
 
