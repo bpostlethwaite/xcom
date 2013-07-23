@@ -28,7 +28,7 @@ if (gitarg.cmd.toLowerCase() === "put")
 else prompt.get(passScheme, onPrompt)
 
 function onPrompt(err, result) {
-  if (err) throw new Error ("password error")
+  if (err) return console.log("encryption password failure")
   gitarg.addcmd("get", get, 1, [result.password])
   gitarg.addcmd("put", put, 3, [result.password])
   gitarg.run()
@@ -37,11 +37,11 @@ function onPrompt(err, result) {
 function doublePrompt(passScheme, onPrompt) {
   var pass1
   prompt.get(passScheme, function (err, result) {
-    if (err) throw new Error ("password error")
+    if (err) return console.log("encryption password failure")
     pass1 = result.password
     prompt.message = "Enter you password again: "
     prompt.get(passScheme, function (err, result2) {
-      if (err) throw new Error ("password error")
+      if (err) return console.log("encryption password failure")
       if (pass1 !== result2.password)
         throw new Error ("passwords do not match")
       onPrompt(null, result)
