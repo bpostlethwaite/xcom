@@ -1,4 +1,4 @@
-#! /usr/bin/nodejs
+#! /usr/bin/node
 var levnet = require('levelnet')
   , net = require('net')
   , prompt = require('prompt')
